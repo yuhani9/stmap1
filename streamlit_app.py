@@ -168,7 +168,7 @@ with col2:
     data=df_kago,
     get_position='[lon, lat]',
     get_elevation='elevation',
-    radius=6000,
+    radius=12000,
     get_fill_color='[200, 50, 50, 180]',
     pickable=True,
     auto_highlight=True,
