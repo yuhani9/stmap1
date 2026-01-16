@@ -133,7 +133,7 @@ with col1:
     st.dataframe(df[['City', 'Temperature']], use_container_width=True)
 
     st.subheader("鹿児島ローカル都市")
-st.dataframe(df_kago[["City", "Temperature"]], use_container_width=True)
+    st.dataframe(df_kago[["City", "Temperature"]], use_container_width=True)
 
     
     if st.button('データを更新'):
