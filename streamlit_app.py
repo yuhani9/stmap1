@@ -121,7 +121,7 @@ df_kago = pd.DataFrame([
 ])
 
 df_kago["Temperature"] = df_kago["City"].map(lambda c: kagoshima_hourly[c][selected_idx])
-df_kago["elevation"] = df_kago["Temperature"] * 2000  # ローカルは少し低めで見やすく
+df_kago["elevation"] = df_kago["Temperature"] * 3000  
 
 
 
@@ -168,7 +168,7 @@ with col2:
     data=df_kago,
     get_position='[lon, lat]',
     get_elevation='elevation',
-    radius=12000,
+    radius=6000,
     get_fill_color='[200, 50, 50, 180]',
     pickable=True,
     auto_highlight=True,
