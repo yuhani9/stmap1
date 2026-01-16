@@ -81,7 +81,7 @@ with col2:
         get_position='[lon, lat]',
         get_elevation='elevation',
         radius=12000,        # 柱の太さ
-        get_fill_color='[100, 100, 4, 180]', # 柱の色（オレンジ系）
+        get_fill_color='[100, 100, 100, 180]', # 柱の色（オレンジ系）
         pickable=True,       # ホバーを有効に
         auto_highlight=True,
     )
