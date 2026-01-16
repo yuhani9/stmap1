@@ -20,6 +20,34 @@ kyushu_capitals = {
 
 # --- データ取得関数 ---
 @st.cache_data(ttl=600)
+def fetch_hourly_temperatures():
+    BASE_URL = "https://api.open-meteo.com/v1/forecast"
+    hourly_by_city = {}
+    time_index = None
+
+    for city, coords in kyushu_capitals.items():
+        params = {
+            "latitude": coords["lat"],
+            "longitude": coords["lon"],
+            "hourly": "temperature_2m",
+            "timezone": "Asia/Tokyo",
+            "forecast_days": 2
+        }
+        r = requests.get(BASE_URL, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+
+        times = data["hourly"]["time"]                 # 例: "2026-01-16T18:00"
+        temps = data["hourly"]["temperature_2m"]       # 同じ長さの配列
+
+        if time_index is None:
+            time_index = times  # 都市間で同じ想定（Open-Meteoは通常揃う）
+
+        hourly_by_city[city] = temps
+
+    return time_index, hourly_by_city
+
+@st.cache_data(ttl=600)
 def fetch_weather_data():
     weather_info = []
     BASE_URL = 'https://api.open-meteo.com/v1/forecast'
@@ -45,12 +73,33 @@ def fetch_weather_data():
             
     return pd.DataFrame(weather_info)
 
-# データの取得
-with st.spinner('最新の気温データを取得中...'):
-    df = fetch_weather_data()
+# まず「都市の座標df」だけ作る（気温はスライダーで入れる）
+df = pd.DataFrame([
+    {"City": city, "lat": coords["lat"], "lon": coords["lon"]}
+    for city, coords in kyushu_capitals.items()
+])
 
-# 気温を高さ（メートル）に変換（例：1度 = 3000m）
-df['elevation'] = df['Temperature'] * 3000
+with st.spinner("最新の気温データ（時間別）を取得中..."):
+    time_list, hourly_by_city = fetch_hourly_temperatures()
+
+# スライダー（時刻選択）
+# ここでは「インデックススライダー」にして、表示だけ時刻文字列にする
+selected_idx = st.slider(
+    "表示する時刻（JST）",
+    min_value=0,
+    max_value=len(time_list) - 1,
+    value=0
+)
+
+selected_time = time_list[selected_idx]
+st.caption(f"選択中: {selected_time} (JST)")
+
+# 選択時刻の気温をdfに流し込む
+df["Temperature"] = df["City"].map(lambda c: hourly_by_city[c][selected_idx])
+
+# 高さに変換
+df["elevation"] = df["Temperature"] * 3000
+
 
 # --- メインレイアウト ---
 col1, col2 = st.columns([1, 2])
@@ -81,7 +130,7 @@ with col2:
         get_position='[lon, lat]',
         get_elevation='elevation',
         radius=12000,        # 柱の太さ
-        get_fill_color='[100, 100, 100, 180]', # 柱の色（オレンジ系）
+        get_fill_color='[100, 100, 0, 180]', # 柱の色（オレンジ系）
         pickable=True,       # ホバーを有効に
         auto_highlight=True,
     )
@@ -91,7 +140,7 @@ with col2:
         layers=[layer],
         initial_view_state=view_state,
         tooltip={
-            "html": "<b>{City}</b><br>気温: {Temperature}°C",
-            "style": {"color": "white"}
-        }
+    "html": "<b>{City}</b><br>気温: {Temperature}°C<br>時刻: " + selected_time,
+    "style": {"color": "white"}
+}
     ))
